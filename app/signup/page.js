@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 const PLAN_LABELS = {
@@ -8,7 +8,7 @@ const PLAN_LABELS = {
   enterprise: { name: "Enterprise", price: "₦25,000/mo" },
 };
 
-export default function Signup() {
+function SignupForm() {
   const searchParams = useSearchParams();
   const initialPlan = searchParams.get("plan") || "growth";
 
@@ -99,5 +99,13 @@ export default function Signup() {
         {error && <p style={{ color: "#A13D2C", fontSize: 12, marginTop: 10 }}>{error}</p>}
       </form>
     </div>
+  );
+}
+
+export default function Signup() {
+  return (
+    <Suspense fallback={null}>
+      <SignupForm />
+    </Suspense>
   );
 }
