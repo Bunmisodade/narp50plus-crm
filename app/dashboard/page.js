@@ -237,9 +237,20 @@ export default function Dashboard() {
           {!selected && <div style={{ color: "#8A8372", fontFamily: "system-ui" }}>Select a member, or add one.</div>}
           {selected && (
             <div style={{ maxWidth: 640 }}>
-              <div style={{ background: "#fff", border: "1px solid #D9D3C2", borderRadius: 8, padding: 24 }}>
-                <div style={{ fontFamily: "system-ui", fontSize: 11, color: GOLD, fontWeight: 700 }}>{selected.member_no}</div>
-                <h2 style={{ marginTop: 4 }}>{selected.name}</h2>
+              <div style={{ background: "#fff", border: "1px solid #D9D3C2", borderRadius: 8, padding: 24, position: "relative" }}>
+  <button
+    onClick={() => setSelectedId(null)}
+    aria-label="Close"
+    style={{
+      position: "absolute", top: 16, right: 16, width: 28, height: 28, borderRadius: "50%",
+      border: "1px solid #D9D3C2", background: "#fff", color: "#5B5744", cursor: "pointer",
+      fontSize: 15, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center",
+    }}
+  >
+    ×
+  </button>
+  <div style={{ fontFamily: "system-ui", fontSize: 11, color: GOLD, fontWeight: 700 }}>{selected.member_no}</div>
+  <h2 style={{ marginTop: 4, paddingRight: 32 }}>{selected.name}</h2>
                 <div style={{ fontFamily: "system-ui", fontSize: 13, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                   <div>Phone<br /><strong>{selected.phone || "–"}</strong></div>
                   <div>Email<br /><strong>{selected.email || "–"}</strong></div>
