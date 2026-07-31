@@ -516,4 +516,15 @@ function EmailForm({ members, onCancel, onSend }) {
         ))}
       </div>
       <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-        <button onClick={onCancel}
+       <button onClick={onCancel} style={cancelBtnStyle}>Cancel</button>
+        <button
+          onClick={handleSend}
+          disabled={sending}
+          style={{ background: TEAL, color: "#fff", border: "none", borderRadius: 4, padding: "8px 14px", cursor: sending ? "default" : "pointer", opacity: sending ? 0.7 : 1 }}
+        >
+          {sending ? "Sending…" : "Send"}
+        </button>
+      </div>
+    </Modal>
+  );
+}
