@@ -45,6 +45,35 @@ function computeStatus(m) {
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "–");
 const fmtNaira = (n) => (n == null ? "–" : "₦" + Number(n).toLocaleString("en-NG"));
 
+function Modal({ onClose, width = 360, children }) {
+  return (
+    <div
+      onClick={onClose}
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{ background: "#fff", padding: 24, borderRadius: 8, width, fontFamily: "system-ui", maxHeight: "85vh", overflowY: "auto", position: "relative" }}
+      >
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          style={{
+            position: "absolute", top: 12, right: 12, width: 28, height: 28, borderRadius: "50%",
+            border: "1px solid #D9D3C2", background: "#fff", color: "#5B5744", cursor: "pointer",
+            fontSize: 15, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center",
+          }}
+        >
+          ×
+        </button>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+const cancelBtnStyle = { background: "none", border: "1px solid #D9D3C2", borderRadius: 4, padding: "8px 14px", cursor: "pointer", color: INK };
+
 export default function Dashboard() {
   const [members, setMembers] = useState([]);
   const [cooperativeId, setCooperativeId] = useState(null);
@@ -319,23 +348,32 @@ export default function Dashboard() {
 
 function MemberForm({ onCancel, onSave }) {
   const [form, setForm] = useState({ name: "", phone: "", email: "", joinDate: "", dues: "", lastPayment: "", renewalDate: "" });
+  const [error, setError] = useState("");
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
+
+  function handleSave() {
+    if (!form.name.trim()) {
+      setError("Please enter a name before saving.");
+      return;
+    }
+    onSave(form);
+  }
+
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ background: "#fff", padding: 24, borderRadius: 8, width: 360, fontFamily: "system-ui" }}>
-        <h3>New member</h3>
-        {["name", "phone", "email"].map((k) => (
-          <input key={k} placeholder={k} value={form[k]} onChange={set(k)} style={{ width: "100%", padding: 8, marginBottom: 8, border: "1px solid #D9D3C2", borderRadius: 4 }} />
-        ))}
-        <label style={{ fontSize: 12 }}>Join date<input type="date" value={form.joinDate} onChange={set("joinDate")} style={{ width: "100%", padding: 8, marginBottom: 8, border: "1px solid #D9D3C2", borderRadius: 4 }} /></label>
-        <label style={{ fontSize: 12 }}>Dues (₦)<input type="number" value={form.dues} onChange={set("dues")} style={{ width: "100%", padding: 8, marginBottom: 8, border: "1px solid #D9D3C2", borderRadius: 4 }} /></label>
-        <label style={{ fontSize: 12 }}>Renewal due<input type="date" value={form.renewalDate} onChange={set("renewalDate")} style={{ width: "100%", padding: 8, marginBottom: 8, border: "1px solid #D9D3C2", borderRadius: 4 }} /></label>
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 12 }}>
-          <button onClick={onCancel}>Cancel</button>
-          <button onClick={() => form.name && onSave(form)} style={{ background: TEAL, color: "#fff", border: "none", borderRadius: 4, padding: "8px 14px", cursor: "pointer" }}>Save</button>
-        </div>
+    <Modal onClose={onCancel}>
+      <h3 style={{ marginTop: 0, paddingRight: 24 }}>New member</h3>
+      {["name", "phone", "email"].map((k) => (
+        <input key={k} placeholder={k} value={form[k]} onChange={set(k)} style={{ width: "100%", padding: 8, marginBottom: 8, border: "1px solid #D9D3C2", borderRadius: 4 }} />
+      ))}
+      <label style={{ fontSize: 12 }}>Join date<input type="date" value={form.joinDate} onChange={set("joinDate")} style={{ width: "100%", padding: 8, marginBottom: 8, border: "1px solid #D9D3C2", borderRadius: 4 }} /></label>
+      <label style={{ fontSize: 12 }}>Dues (₦)<input type="number" value={form.dues} onChange={set("dues")} style={{ width: "100%", padding: 8, marginBottom: 8, border: "1px solid #D9D3C2", borderRadius: 4 }} /></label>
+      <label style={{ fontSize: 12 }}>Renewal due<input type="date" value={form.renewalDate} onChange={set("renewalDate")} style={{ width: "100%", padding: 8, marginBottom: 8, border: "1px solid #D9D3C2", borderRadius: 4 }} /></label>
+      {error && <div style={{ color: BRICK, fontSize: 12, marginBottom: 8 }}>{error}</div>}
+      <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 12 }}>
+        <button onClick={onCancel} style={cancelBtnStyle}>Cancel</button>
+        <button onClick={handleSave} style={{ background: TEAL, color: "#fff", border: "none", borderRadius: 4, padding: "8px 14px", cursor: "pointer" }}>Save</button>
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -346,34 +384,32 @@ function ProductForm({ onCancel, onSave }) {
   });
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ background: "#fff", padding: 24, borderRadius: 8, width: 360, fontFamily: "system-ui" }}>
-        <h3 style={{ marginTop: 0 }}>Add product</h3>
-        <label style={{ fontSize: 12 }}>Product type</label>
-        <select value={form.productType} onChange={set("productType")} style={{ width: "100%", padding: 8, marginBottom: 8, marginTop: 4, border: "1px solid #D9D3C2", borderRadius: 4 }}>
-          <option value="savings">Savings</option>
-          <option value="loan">Loan</option>
-          <option value="investment">Investment</option>
-          <option value="equity">Equity</option>
-        </select>
-        <label style={{ fontSize: 12 }}>
-          {form.productType === "loan" ? "Amount disbursed (₦, optional)" : "Opening deposit (₦, optional)"}
-          <input type="number" value={form.openingAmount} onChange={set("openingAmount")} style={{ width: "100%", padding: 8, marginBottom: 8, border: "1px solid #D9D3C2", borderRadius: 4 }} />
-        </label>
-        {form.productType === "loan" && (
-          <label style={{ fontSize: 12 }}>Principal (₦)<input type="number" value={form.principal} onChange={set("principal")} style={{ width: "100%", padding: 8, marginBottom: 8, border: "1px solid #D9D3C2", borderRadius: 4 }} /></label>
-        )}
-        <label style={{ fontSize: 12 }}>Interest rate (%)<input type="number" value={form.interestRate} onChange={set("interestRate")} style={{ width: "100%", padding: 8, marginBottom: 8, border: "1px solid #D9D3C2", borderRadius: 4 }} /></label>
-        <label style={{ fontSize: 12 }}>Opened date<input type="date" value={form.openedDate} onChange={set("openedDate")} style={{ width: "100%", padding: 8, marginBottom: 8, border: "1px solid #D9D3C2", borderRadius: 4 }} /></label>
-        {form.productType === "investment" && (
-          <label style={{ fontSize: 12 }}>Maturity date<input type="date" value={form.maturityDate} onChange={set("maturityDate")} style={{ width: "100%", padding: 8, marginBottom: 8, border: "1px solid #D9D3C2", borderRadius: 4 }} /></label>
-        )}
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 12 }}>
-          <button onClick={onCancel}>Cancel</button>
-          <button onClick={() => onSave(form)} style={{ background: TEAL, color: "#fff", border: "none", borderRadius: 4, padding: "8px 14px", cursor: "pointer" }}>Save</button>
-        </div>
+    <Modal onClose={onCancel}>
+      <h3 style={{ marginTop: 0, paddingRight: 24 }}>Add product</h3>
+      <label style={{ fontSize: 12 }}>Product type</label>
+      <select value={form.productType} onChange={set("productType")} style={{ width: "100%", padding: 8, marginBottom: 8, marginTop: 4, border: "1px solid #D9D3C2", borderRadius: 4 }}>
+        <option value="savings">Savings</option>
+        <option value="loan">Loan</option>
+        <option value="investment">Investment</option>
+        <option value="equity">Equity</option>
+      </select>
+      <label style={{ fontSize: 12 }}>
+        {form.productType === "loan" ? "Amount disbursed (₦, optional)" : "Opening deposit (₦, optional)"}
+        <input type="number" value={form.openingAmount} onChange={set("openingAmount")} style={{ width: "100%", padding: 8, marginBottom: 8, border: "1px solid #D9D3C2", borderRadius: 4 }} />
+      </label>
+      {form.productType === "loan" && (
+        <label style={{ fontSize: 12 }}>Principal (₦)<input type="number" value={form.principal} onChange={set("principal")} style={{ width: "100%", padding: 8, marginBottom: 8, border: "1px solid #D9D3C2", borderRadius: 4 }} /></label>
+      )}
+      <label style={{ fontSize: 12 }}>Interest rate (%)<input type="number" value={form.interestRate} onChange={set("interestRate")} style={{ width: "100%", padding: 8, marginBottom: 8, border: "1px solid #D9D3C2", borderRadius: 4 }} /></label>
+      <label style={{ fontSize: 12 }}>Opened date<input type="date" value={form.openedDate} onChange={set("openedDate")} style={{ width: "100%", padding: 8, marginBottom: 8, border: "1px solid #D9D3C2", borderRadius: 4 }} /></label>
+      {form.productType === "investment" && (
+        <label style={{ fontSize: 12 }}>Maturity date<input type="date" value={form.maturityDate} onChange={set("maturityDate")} style={{ width: "100%", padding: 8, marginBottom: 8, border: "1px solid #D9D3C2", borderRadius: 4 }} /></label>
+      )}
+      <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 12 }}>
+        <button onClick={onCancel} style={cancelBtnStyle}>Cancel</button>
+        <button onClick={() => onSave(form)} style={{ background: TEAL, color: "#fff", border: "none", borderRadius: 4, padding: "8px 14px", cursor: "pointer" }}>Save</button>
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -383,38 +419,41 @@ function TransactionForm({ productType, onCancel, onSave }) {
     transactionType: options[0], direction: "credit", amount: "",
     transactionDate: new Date().toISOString().slice(0, 10), description: "",
   });
+  const [error, setError] = useState("");
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
 
+  function handleSave() {
+    if (!form.amount || Number(form.amount) <= 0) {
+      setError("Please enter an amount greater than zero.");
+      return;
+    }
+    onSave(form);
+  }
+
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ background: "#fff", padding: 24, borderRadius: 8, width: 360, fontFamily: "system-ui" }}>
-        <h3 style={{ marginTop: 0 }}>Record transaction</h3>
-        <label style={{ fontSize: 12 }}>Type</label>
-        <select value={form.transactionType} onChange={set("transactionType")} style={{ width: "100%", padding: 8, marginBottom: 8, marginTop: 4, border: "1px solid #D9D3C2", borderRadius: 4 }}>
-          {options.map((o) => <option key={o} value={o}>{TRANSACTION_LABELS[o]}</option>)}
-        </select>
-        {form.transactionType === "adjustment" && (
-          <label style={{ fontSize: 12 }}>Direction
-            <select value={form.direction} onChange={set("direction")} style={{ width: "100%", padding: 8, marginBottom: 8, marginTop: 4, border: "1px solid #D9D3C2", borderRadius: 4 }}>
-              <option value="credit">Increase balance</option>
-              <option value="debit">Decrease balance</option>
-            </select>
-          </label>
-        )}
-        <label style={{ fontSize: 12 }}>Amount (₦)<input type="number" value={form.amount} onChange={set("amount")} style={{ width: "100%", padding: 8, marginBottom: 8, border: "1px solid #D9D3C2", borderRadius: 4 }} /></label>
-        <label style={{ fontSize: 12 }}>Date<input type="date" value={form.transactionDate} onChange={set("transactionDate")} style={{ width: "100%", padding: 8, marginBottom: 8, border: "1px solid #D9D3C2", borderRadius: 4 }} /></label>
-        <label style={{ fontSize: 12 }}>Description (optional)<input value={form.description} onChange={set("description")} style={{ width: "100%", padding: 8, marginBottom: 8, border: "1px solid #D9D3C2", borderRadius: 4 }} /></label>
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 12 }}>
-          <button onClick={onCancel}>Cancel</button>
-          <button
-            onClick={() => form.amount && Number(form.amount) > 0 && onSave(form)}
-            style={{ background: TEAL, color: "#fff", border: "none", borderRadius: 4, padding: "8px 14px", cursor: "pointer" }}
-          >
-            Save
-          </button>
-        </div>
+    <Modal onClose={onCancel}>
+      <h3 style={{ marginTop: 0, paddingRight: 24 }}>Record transaction</h3>
+      <label style={{ fontSize: 12 }}>Type</label>
+      <select value={form.transactionType} onChange={set("transactionType")} style={{ width: "100%", padding: 8, marginBottom: 8, marginTop: 4, border: "1px solid #D9D3C2", borderRadius: 4 }}>
+        {options.map((o) => <option key={o} value={o}>{TRANSACTION_LABELS[o]}</option>)}
+      </select>
+      {form.transactionType === "adjustment" && (
+        <label style={{ fontSize: 12 }}>Direction
+          <select value={form.direction} onChange={set("direction")} style={{ width: "100%", padding: 8, marginBottom: 8, marginTop: 4, border: "1px solid #D9D3C2", borderRadius: 4 }}>
+            <option value="credit">Increase balance</option>
+            <option value="debit">Decrease balance</option>
+          </select>
+        </label>
+      )}
+      <label style={{ fontSize: 12 }}>Amount (₦)<input type="number" value={form.amount} onChange={set("amount")} style={{ width: "100%", padding: 8, marginBottom: 8, border: "1px solid #D9D3C2", borderRadius: 4 }} /></label>
+      <label style={{ fontSize: 12 }}>Date<input type="date" value={form.transactionDate} onChange={set("transactionDate")} style={{ width: "100%", padding: 8, marginBottom: 8, border: "1px solid #D9D3C2", borderRadius: 4 }} /></label>
+      <label style={{ fontSize: 12 }}>Description (optional)<input value={form.description} onChange={set("description")} style={{ width: "100%", padding: 8, marginBottom: 8, border: "1px solid #D9D3C2", borderRadius: 4 }} /></label>
+      {error && <div style={{ color: BRICK, fontSize: 12, marginBottom: 8 }}>{error}</div>}
+      <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 12 }}>
+        <button onClick={onCancel} style={cancelBtnStyle}>Cancel</button>
+        <button onClick={handleSave} style={{ background: TEAL, color: "#fff", border: "none", borderRadius: 4, padding: "8px 14px", cursor: "pointer" }}>Save</button>
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -447,47 +486,34 @@ function EmailForm({ members, onCancel, onSend }) {
   }
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ background: "#fff", padding: 24, borderRadius: 8, width: 440, fontFamily: "system-ui", maxHeight: "80vh", overflowY: "auto" }}>
-        <h3 style={{ marginTop: 0 }}>Send email</h3>
-        <input
-          placeholder="Subject"
-          value={subject}
-          onChange={(e) => setSubject(e.target.value)}
-          style={{ width: "100%", padding: 8, marginBottom: 8, border: "1px solid #D9D3C2", borderRadius: 4 }}
-        />
-        <textarea
-          placeholder="Message"
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          rows={6}
-          style={{ width: "100%", padding: 8, marginBottom: 12, border: "1px solid #D9D3C2", borderRadius: 4, fontFamily: "system-ui" }}
-        />
-        <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
-          Recipients ({selected.size} of {members.length})
-        </div>
-        <div style={{ border: "1px solid #D9D3C2", borderRadius: 4, maxHeight: 160, overflowY: "auto", marginBottom: 12 }}>
-          {members.length === 0 && (
-            <div style={{ padding: 10, fontSize: 12, color: "#8A8372" }}>No members with an email address match the current filter.</div>
-          )}
-          {members.map((m) => (
-            <label key={m.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", fontSize: 13, borderBottom: "1px solid #EFEBE0" }}>
-              <input type="checkbox" checked={selected.has(m.id)} onChange={() => toggle(m.id)} />
-              {m.name} <span style={{ color: "#8A8372" }}>({m.email})</span>
-            </label>
-          ))}
-        </div>
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-          <button onClick={onCancel}>Cancel</button>
-          <button
-            onClick={handleSend}
-            disabled={sending}
-            style={{ background: TEAL, color: "#fff", border: "none", borderRadius: 4, padding: "8px 14px", cursor: sending ? "default" : "pointer", opacity: sending ? 0.7 : 1 }}
-          >
-            {sending ? "Sending…" : "Send"}
-          </button>
-        </div>
+    <Modal onClose={onCancel} width={440}>
+      <h3 style={{ marginTop: 0, paddingRight: 24 }}>Send email</h3>
+      <input
+        placeholder="Subject"
+        value={subject}
+        onChange={(e) => setSubject(e.target.value)}
+        style={{ width: "100%", padding: 8, marginBottom: 8, border: "1px solid #D9D3C2", borderRadius: 4 }}
+      />
+      <textarea
+        placeholder="Message"
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        rows={6}
+        style={{ width: "100%", padding: 8, marginBottom: 12, border: "1px solid #D9D3C2", borderRadius: 4, fontFamily: "system-ui" }}
+      />
+      <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
+        Recipients ({selected.size} of {members.length})
       </div>
-    </div>
-  );
-}
+      <div style={{ border: "1px solid #D9D3C2", borderRadius: 4, maxHeight: 160, overflowY: "auto", marginBottom: 12 }}>
+        {members.length === 0 && (
+          <div style={{ padding: 10, fontSize: 12, color: "#8A8372" }}>No members with an email address match the current filter.</div>
+        )}
+        {members.map((m) => (
+          <label key={m.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", fontSize: 13, borderBottom: "1px solid #EFEBE0" }}>
+            <input type="checkbox" checked={selected.has(m.id)} onChange={() => toggle(m.id)} />
+            {m.name} <span style={{ color: "#8A8372" }}>({m.email})</span>
+          </label>
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+        <button onClick={onCancel}
