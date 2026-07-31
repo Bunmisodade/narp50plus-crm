@@ -103,19 +103,35 @@ async function provisionCooperative(data) {
   await sendWelcomeEmail({ email, adminName, cooperativeName, inviteCode });
 }
 
-// subscription.create arrives shortly after charge.success and carries the
-// actual subscription_code + next billing date, which charge.success doesn't have.
-async function attachSubscription(data) {
+// subscription.create can arrive within milliseconds of charge.success — sometimes
+// before provisionCooperative has finished inserting the cooperative row. Retry
+// a few times with a short delay rather than silently updating zero rows.
+async function attachSubscription(data, attempt = 1) {
   const customerCode = data.customer?.customer_code;
   if (!customerCode) return;
 
-  await supabaseAdmin
+  const { data: updated, error } = await supabaseAdmin
     .from("cooperatives")
     .update({
       paystack_subscription_code: data.subscription_code || null,
       current_period_end: data.next_payment_date || null,
     })
-    .eq("paystack_customer_code", customerCode);
+    .eq("paystack_customer_code", customerCode)
+    .select("id");
+
+  if (error) {
+    console.error("Failed to attach subscription:", error);
+    return;
+  }
+
+  if ((!updated || updated.length === 0) && attempt < 5) {
+    await new Promise((r) => setTimeout(r, 1000));
+    return attachSubscription(data, attempt + 1);
+  }
+
+  if (!updated || updated.length === 0) {
+    console.error("attachSubscription: no matching cooperative found after retries for customer", customerCode);
+  }
 }
 
 async function markSubscriptionStatus(data, status) {
