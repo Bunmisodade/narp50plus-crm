@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import {
   listMembers, addMember, addNote, addMemberProduct, addProductTransaction, getMyCooperativeId, getMyProfile,
-  inviteMemberToPortal,
+  inviteMemberToPortal, closeMemberProduct,
 } from "../../lib/members";
 import { sendMemberEmails } from "../../lib/email";
 import { Button, Input, Select, TextArea, Label, Card, Badge, Modal } from "../../components/ui";
@@ -132,6 +132,20 @@ export default function Dashboard() {
     } catch (e) {
       console.error("Failed to add product:", e);
       alert("Could not save this product. Check the browser console for details.");
+    }
+  }
+
+  async function handleCloseProduct(productId, balance) {
+    const warning = balance && Number(balance) !== 0
+      ? `This product still has a balance of ${fmtNaira(balance)}. Close it anyway?`
+      : "Close this product? Its transaction history will be kept, but no further transactions can be recorded against it.";
+    if (!window.confirm(warning)) return;
+    try {
+      await closeMemberProduct(productId);
+      await refresh();
+    } catch (e) {
+      console.error("Failed to close product:", e);
+      alert("Could not close this product. Check the browser console for details.");
     }
   }
 
@@ -275,7 +289,7 @@ export default function Dashboard() {
                       const txs = (p.product_transactions || []).slice().sort((a, b) => new Date(b.transaction_date) - new Date(a.transaction_date));
                       return (
                         <div key={p.id} className="border-b border-paper py-2.5">
-                          <div className="flex flex-wrap justify-between items-center gap-2">
+                          <div className={`flex flex-wrap justify-between items-center gap-2 ${p.status !== "active" ? "opacity-60" : ""}`}>
                             <div className="cursor-pointer" onClick={() => setExpandedProductId(isExpanded ? null : p.id)}>
                               <Badge tone={PRODUCT_TONE[p.product_type]} className="mr-2">
                                 {PRODUCT_LABELS[p.product_type] || p.product_type}
@@ -284,13 +298,24 @@ export default function Dashboard() {
                             </div>
                             <div className="flex items-center gap-2.5">
                               <div className="font-bold text-sm">{fmtNaira(p.balance)}</div>
-                              <Button
-                                variant="ghost"
-                                onClick={() => setTxTarget({ productId: p.id, productType: p.product_type })}
-                                className="!py-1 !px-2 text-xs"
-                              >
-                                + Transaction
-                              </Button>
+                              {p.status === "active" && (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    onClick={() => setTxTarget({ productId: p.id, productType: p.product_type })}
+                                    className="!py-1 !px-2 text-xs"
+                                  >
+                                    + Transaction
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    onClick={() => handleCloseProduct(p.id, p.balance)}
+                                    className="!py-1 !px-2 text-xs"
+                                  >
+                                    Close
+                                  </Button>
+                                </>
+                              )}
                             </div>
                           </div>
                           {isExpanded && (
