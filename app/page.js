@@ -53,7 +53,7 @@ export default function Home() {
 
           <div className="relative">
             <div className="ledger-card">
-              <svg className="absolute -top-4 -right-3.5 w-24 h-24 rotate-[-11deg]" viewBox="0 0 100 100" aria-hidden="true">
+              <svg className="absolute -top-10 -right-8 w-24 h-24 rotate-[-11deg]" viewBox="0 0 100 100" aria-hidden="true">
                 <circle cx="50" cy="50" r="42" fill="none" stroke="#A13D2C" strokeWidth="2.5" opacity="0.85" />
                 <circle cx="50" cy="50" r="34" fill="none" stroke="#A13D2C" strokeWidth="1" opacity="0.6" />
                 <text x="50" y="46" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="10.5" fill="#A13D2C" opacity="0.9" fontWeight="600">VERIFIED</text>
