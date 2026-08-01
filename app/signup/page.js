@@ -1,6 +1,7 @@
 "use client";
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { Button, Input, Select, Label } from "../../components/ui";
 
 const PLAN_LABELS = {
   starter: { name: "Starter", price: "₦10,000/mo" },
@@ -46,57 +47,54 @@ function SignupForm() {
   }
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center", fontFamily: "system-ui, sans-serif", background: "#EFEBE0" }}>
-      <form onSubmit={startCheckout} style={{ background: "#fff", padding: 32, borderRadius: 8, width: 380, border: "1px solid #D9D3C2" }}>
-        <h1 style={{ fontSize: 20, marginTop: 0 }}>Start your cooperative</h1>
-        <p style={{ fontSize: 13, color: "#666" }}>
+    <div className="flex min-h-screen items-center justify-center bg-paper px-4">
+      <form onSubmit={startCheckout} className="bg-white p-6 sm:p-8 rounded-md w-full max-w-md border border-line-strong">
+        <h1 className="text-xl mt-0 mb-1">Start your cooperative</h1>
+        <p className="text-sm text-ink-soft mb-4">
           Set up your cooperative on the {PLAN_LABELS[plan]?.name} plan — {PLAN_LABELS[plan]?.price}.
         </p>
 
-        <label style={{ fontSize: 12, color: "#666" }}>Plan</label>
-        <select
-          value={plan}
-          onChange={(e) => setPlan(e.target.value)}
-          style={{ width: "100%", padding: 10, marginBottom: 12, marginTop: 4, border: "1px solid #D9D3C2", borderRadius: 4 }}
-        >
-          <option value="starter">Starter — ₦10,000/mo</option>
-          <option value="growth">Growth — ₦15,000/mo</option>
-          <option value="enterprise">Enterprise — ₦25,000/mo</option>
-        </select>
+        <div className="mb-3">
+          <Label>Plan</Label>
+          <Select value={plan} onChange={(e) => setPlan(e.target.value)}>
+            <option value="starter">Starter — ₦10,000/mo</option>
+            <option value="growth">Growth — ₦15,000/mo</option>
+            <option value="enterprise">Enterprise — ₦25,000/mo</option>
+          </Select>
+        </div>
 
-        <input
-          type="text"
-          required
-          value={cooperativeName}
-          onChange={(e) => setCooperativeName(e.target.value)}
-          placeholder="Cooperative name"
-          style={{ width: "100%", padding: 10, marginBottom: 12, border: "1px solid #D9D3C2", borderRadius: 4 }}
-        />
-        <input
-          type="text"
-          required
-          value={adminName}
-          onChange={(e) => setAdminName(e.target.value)}
-          placeholder="Your full name"
-          style={{ width: "100%", padding: 10, marginBottom: 12, border: "1px solid #D9D3C2", borderRadius: 4 }}
-        />
-        <input
-          type="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@cooperative.org"
-          style={{ width: "100%", padding: 10, marginBottom: 16, border: "1px solid #D9D3C2", borderRadius: 4 }}
-        />
+        <div className="mb-3">
+          <Input
+            type="text"
+            required
+            value={cooperativeName}
+            onChange={(e) => setCooperativeName(e.target.value)}
+            placeholder="Cooperative name"
+          />
+        </div>
+        <div className="mb-3">
+          <Input
+            type="text"
+            required
+            value={adminName}
+            onChange={(e) => setAdminName(e.target.value)}
+            placeholder="Your full name"
+          />
+        </div>
+        <div className="mb-4">
+          <Input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@cooperative.org"
+          />
+        </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          style={{ width: "100%", padding: 10, background: "#2F6F5E", color: "#fff", border: "none", borderRadius: 4, cursor: loading ? "default" : "pointer", opacity: loading ? 0.7 : 1 }}
-        >
+        <Button type="submit" disabled={loading} className="w-full">
           {loading ? "Redirecting to payment…" : "Continue to payment"}
-        </button>
-        {error && <p style={{ color: "#A13D2C", fontSize: 12, marginTop: 10 }}>{error}</p>}
+        </Button>
+        {error && <p className="text-rust text-xs mt-2.5">{error}</p>}
       </form>
     </div>
   );
