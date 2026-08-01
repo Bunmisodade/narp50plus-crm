@@ -1,0 +1,123 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-paper text-ink font-sans antialiased;
+  }
+  h1, h2, h3 {
+    @apply font-serif font-semibold text-ink;
+  }
+  a {
+    color: inherit;
+  }
+  ::selection {
+    @apply bg-forest-tint text-forest-dark;
+  }
+  *:focus-visible {
+    outline: 2px solid theme("colors.forest");
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .eyebrow {
+    @apply font-mono text-xs tracking-widest uppercase text-forest font-semibold;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center px-5 py-2.5 font-sans font-semibold text-sm rounded-card border border-transparent cursor-pointer transition;
+  }
+  .btn-primary {
+    @apply bg-forest text-white hover:bg-forest-dark hover:-translate-y-px hover:shadow-lg;
+  }
+  .btn-ghost {
+    @apply border-line-strong text-ink bg-transparent hover:border-forest hover:text-forest-dark;
+  }
+
+  /* Landing-page ledger motif: bespoke decorative pieces that don't reduce
+     cleanly to utility classes (rotation, pseudo-elements, layered shadows). */
+  .wordmark-tab {
+    @apply w-[22px] h-7 bg-forest relative;
+    border-radius: 2px 6px 6px 2px;
+  }
+  .wordmark-tab::after {
+    content: "";
+    position: absolute;
+    left: 4px;
+    top: 6px;
+    right: 4px;
+    height: 2px;
+    background: theme("colors.brass-tint");
+    box-shadow: 0 6px 0 theme("colors.brass-tint"), 0 12px 0 theme("colors.brass-tint");
+  }
+
+  .ledger-card {
+    @apply bg-card border border-line-strong rounded-md relative p-6 pb-5;
+    box-shadow: 0 20px 46px -18px rgba(35, 40, 31, 0.35);
+    transform: rotate(1.1deg);
+  }
+  @media (max-width: 880px) {
+    .ledger-card {
+      transform: none;
+    }
+  }
+
+  .tab-chip {
+    @apply bg-brass text-white font-mono text-[10px] tracking-wider uppercase;
+    padding: 6px 10px 6px 12px;
+    border-radius: 3px 8px 8px 3px;
+    box-shadow: 2px 2px 0 rgba(35, 40, 31, 0.18);
+  }
+  .tab-chip:nth-child(2) {
+    @apply bg-forest;
+  }
+  .tab-chip:nth-child(3) {
+    @apply bg-rust;
+  }
+
+  .price-card {
+    @apply bg-card border border-line-strong rounded-md p-7 pt-8 flex flex-col relative transition;
+  }
+  .price-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 22px 40px -22px rgba(35, 40, 31, 0.35);
+  }
+  .price-card.featured {
+    @apply border-forest;
+    box-shadow: 0 22px 44px -20px rgba(32, 78, 66, 0.3);
+  }
+  .price-card .ribbon {
+    @apply absolute bg-forest text-white font-mono uppercase;
+    top: -12px;
+    left: 26px;
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    padding: 5px 10px;
+    border-radius: 3px;
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .reveal.in {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+    .price-card, .btn {
+      transition: none;
+    }
+  }
+}
