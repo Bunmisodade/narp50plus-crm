@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
-import { Button, Input } from "../../components/ui";
+import { Button, Input, SiteFooter } from "../../components/ui";
 
 export default function Login() {
   const [email, setEmail] = useState("");
