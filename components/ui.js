@@ -110,3 +110,11 @@ export function Modal({ onClose, children, widthClass = "max-w-sm" }) {
     </div>
   );
 }
+export function SiteFooter({ className = "" }) {
+  return (
+    <footer className={`px-4 sm:px-8 py-6 text-center sm:text-left text-xs text-ink-soft/70 font-sans ${className}`}>
+      © {new Date().getFullYear()} Cooperative CRM, a Corporate Bundles product.{" "}
+      <a href="/privacy" className="underline hover:text-forest-dark">Privacy Policy</a>
+    </footer>
+  );
+}
