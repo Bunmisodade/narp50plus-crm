@@ -94,10 +94,13 @@ function SignupForm() {
           {loading ? "Redirecting to payment…" : "Continue to payment"}
         </Button>
         {error && <p className="text-rust text-xs mt-2.5">{error}</p>}
-      </form>
+     </form>
       <SiteFooter />
     </div>
   );
+}
+
+export default function Signup() {
 
 export default function Signup() {
   return (
