@@ -1,19 +1,14 @@
 export default function SignupSuccess() {
   return (
-    <div
-      style={{
-        display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center",
-        fontFamily: "system-ui, sans-serif", background: "#EFEBE0",
-      }}
-    >
-      <div style={{ background: "#fff", padding: 32, borderRadius: 8, width: 420, border: "1px solid #D9D3C2", textAlign: "center" }}>
-        <h1 style={{ fontSize: 20, marginTop: 0 }}>Payment received</h1>
-        <p style={{ fontSize: 14, color: "#444", lineHeight: 1.5 }}>
-          We're setting up your cooperative now. Check your email in the next couple of minutes
+    <div className="flex min-h-screen items-center justify-center bg-paper px-4">
+      <div className="bg-white p-8 rounded-md w-full max-w-sm border border-line-strong text-center">
+        <h1 className="text-xl mt-0">Payment received</h1>
+        <p className="text-sm text-ink-soft leading-relaxed mt-3">
+          We&rsquo;re setting up your cooperative now. Check your email in the next couple of minutes
           for your sign-in link and invite code.
         </p>
-        <p style={{ fontSize: 13, color: "#8A8372" }}>
-          Didn't get anything after a few minutes? Check spam, or reach out and we'll sort it out.
+        <p className="text-xs text-ink-soft/80 mt-4">
+          Didn&rsquo;t get anything after a few minutes? Check spam, or reach out and we&rsquo;ll sort it out.
         </p>
       </div>
     </div>
