@@ -1,8 +1,7 @@
 "use client";
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Button, Input, Select, Label } from "../../components/ui";
-
+import { Button, Input, Select, Label, SiteFooter } from "../../components/ui";
 const PLAN_LABELS = {
   starter: { name: "Starter", price: "₦10,000/mo" },
   growth: { name: "Growth", price: "₦15,000/mo" },
@@ -47,7 +46,7 @@ function SignupForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-paper px-4">
+   <div className="flex min-h-screen flex-col items-center justify-center bg-paper px-4">
       <form onSubmit={startCheckout} className="bg-white p-6 sm:p-8 rounded-md w-full max-w-md border border-line-strong">
         <h1 className="text-xl mt-0 mb-1">Start your cooperative</h1>
         <p className="text-sm text-ink-soft mb-4">
@@ -96,9 +95,9 @@ function SignupForm() {
         </Button>
         {error && <p className="text-rust text-xs mt-2.5">{error}</p>}
       </form>
+      <SiteFooter />
     </div>
   );
-}
 
 export default function Signup() {
   return (
