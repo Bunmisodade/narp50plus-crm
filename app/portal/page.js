@@ -2,20 +2,11 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { getMyProfile } from "../../lib/members";
+import { Button, Card, Badge } from "../../components/ui";
 
-const INK = "#1F2E28", TEAL = "#2F6F5E", GOLD = "#B8862B", BRICK = "#A13D2C";
-const STATUS_STYLE = {
-  Active: { bg: "#EAF2EE", fg: TEAL },
-  Overdue: { bg: "#FBEFE9", fg: BRICK },
-  Lapsed: { bg: "#F0EDE6", fg: "#6B6558" },
-};
 const PRODUCT_LABELS = { savings: "Savings", loan: "Loan", investment: "Investment", equity: "Equity" };
-const PRODUCT_STYLE = {
-  savings: { bg: "#EAF2EE", fg: TEAL },
-  loan: { bg: "#FBEFE9", fg: BRICK },
-  investment: { bg: "#F3ECD9", fg: GOLD },
-  equity: { bg: "#EDEAF2", fg: "#5B4E8A" },
-};
+const PRODUCT_TONE = { savings: "forest", loan: "rust", investment: "brass", equity: "purple" };
+const STATUS_TONE = { Active: "forest", Overdue: "rust", Lapsed: "neutral" };
 const TRANSACTION_LABELS = {
   deposit: "Deposit", withdrawal: "Withdrawal", disbursement: "Disbursement",
   repayment: "Repayment", interest: "Interest", fee: "Fee", adjustment: "Adjustment",
@@ -74,79 +65,66 @@ export default function Portal() {
   }
 
   if (loading) {
-    return <div style={{ minHeight: "100vh", background: "#EFEBE0", fontFamily: "system-ui" }} />;
+    return <div className="min-h-screen bg-paper font-sans" />;
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#EFEBE0", fontFamily: "system-ui, sans-serif" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "24px 32px" }}>
-        <h1 style={{ fontSize: 22, margin: 0, fontFamily: "Georgia, serif" }}>My Account</h1>
-        <button
-          onClick={handleLogout}
-          style={{ fontSize: 13, background: "none", border: "1px solid #D9D3C2", borderRadius: 4, padding: "6px 14px", cursor: "pointer" }}
-        >
-          Sign out
-        </button>
+    <div className="min-h-screen bg-paper font-sans">
+      <div className="flex justify-between items-center px-4 sm:px-8 py-5">
+        <h1 className="text-xl m-0 font-serif">My Account</h1>
+        <Button variant="ghost" onClick={handleLogout} className="!py-1.5">Sign out</Button>
       </div>
 
-      <div style={{ padding: "0 32px 32px", maxWidth: 640 }}>
+      <div className="px-4 sm:px-8 pb-8 max-w-2xl">
         {error && (
-          <div style={{ background: "#fff", border: "1px solid #D9D3C2", borderRadius: 8, padding: 24, color: "#8A8372" }}>
-            {error}
-          </div>
+          <Card className="p-6 text-ink-soft">{error}</Card>
         )}
 
         {member && (
-          <div style={{ background: "#fff", border: "1px solid #D9D3C2", borderRadius: 8, padding: 24 }}>
-            <div style={{ fontSize: 11, color: GOLD, fontWeight: 700 }}>{member.member_no}</div>
-            <h2 style={{ marginTop: 4, marginBottom: 12 }}>{member.name}</h2>
-            <span style={{
-              background: STATUS_STYLE[computeStatus(member)].bg, color: STATUS_STYLE[computeStatus(member)].fg,
-              padding: "2px 9px", borderRadius: 3, fontSize: 11, fontWeight: 700, textTransform: "uppercase",
-            }}>
-              {computeStatus(member)}
-            </span>
+          <Card className="p-5 sm:p-6">
+            <div className="text-[11px] text-brass font-bold">{member.member_no}</div>
+            <h2 className="mt-1 mb-3">{member.name}</h2>
+            <Badge tone={STATUS_TONE[computeStatus(member)]}>{computeStatus(member)}</Badge>
 
-            <div style={{ fontSize: 13, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 16 }}>
+            <div className="text-sm grid grid-cols-2 gap-3 mt-4">
               <div>Phone<br /><strong>{member.phone || "–"}</strong></div>
-              <div>Email<br /><strong>{member.email || "–"}</strong></div>
+              <div>Email<br /><strong className="break-all">{member.email || "–"}</strong></div>
               <div>Renewal due<br /><strong>{fmtDate(member.renewal_date)}</strong></div>
               <div>Dues<br /><strong>{fmtNaira(member.dues)}</strong></div>
             </div>
 
-            <div style={{ marginTop: 24 }}>
-              <h3 style={{ fontSize: 13, textTransform: "uppercase", color: "#8A8372", margin: "0 0 8px" }}>Products</h3>
+            <div className="mt-6">
+              <h3 className="text-xs uppercase text-ink-soft tracking-wide mb-2">Products</h3>
               {(member.member_products || []).length === 0 && (
-                <div style={{ fontSize: 12, color: "#8A8372" }}>No products on record yet.</div>
+                <div className="text-xs text-ink-soft">No products on record yet.</div>
               )}
               {(member.member_products || [])
                 .slice()
                 .sort((a, b) => new Date(b.opened_date) - new Date(a.opened_date))
                 .map((p) => {
-                  const s = PRODUCT_STYLE[p.product_type] || { bg: "#EFEBE0", fg: INK };
                   const isExpanded = expandedProductId === p.id;
                   const txs = (p.product_transactions || []).slice().sort((a, b) => new Date(b.transaction_date) - new Date(a.transaction_date));
                   return (
-                    <div key={p.id} style={{ borderBottom: "1px solid #EFEBE0", padding: "10px 0" }}>
+                    <div key={p.id} className="border-b border-paper py-2.5">
                       <div
-                        style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
+                        className="flex flex-wrap justify-between items-center gap-2 cursor-pointer"
                         onClick={() => setExpandedProductId(isExpanded ? null : p.id)}
                       >
                         <div>
-                          <span style={{ background: s.bg, color: s.fg, padding: "2px 7px", borderRadius: 3, fontSize: 11, fontWeight: 700, textTransform: "uppercase", marginRight: 8 }}>
+                          <Badge tone={PRODUCT_TONE[p.product_type]} className="mr-2">
                             {PRODUCT_LABELS[p.product_type] || p.product_type}
-                          </span>
-                          <span style={{ color: "#8A8372", fontSize: 11 }}>{p.status}</span>
+                          </Badge>
+                          <span className="text-ink-soft text-[11px]">{p.status}</span>
                         </div>
-                        <div style={{ fontWeight: 700, fontSize: 14 }}>{fmtNaira(p.balance)}</div>
+                        <div className="font-bold text-sm">{fmtNaira(p.balance)}</div>
                       </div>
                       {isExpanded && (
-                        <div style={{ marginTop: 8, paddingLeft: 4 }}>
-                          {txs.length === 0 && <div style={{ fontSize: 12, color: "#8A8372" }}>No transactions yet.</div>}
+                        <div className="mt-2 pl-1">
+                          {txs.length === 0 && <div className="text-xs text-ink-soft">No transactions yet.</div>}
                           {txs.map((t) => (
-                            <div key={t.id} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "4px 0", color: "#5B5744" }}>
+                            <div key={t.id} className="flex flex-wrap justify-between gap-1 text-xs py-1 text-ink-soft">
                               <span>{fmtDate(t.transaction_date)} · {TRANSACTION_LABELS[t.transaction_type] || t.transaction_type}{t.description ? ` — ${t.description}` : ""}</span>
-                              <span style={{ fontWeight: 700, color: t.direction === "credit" ? TEAL : BRICK }}>
+                              <span className={`font-bold ${t.direction === "credit" ? "text-forest" : "text-rust"}`}>
                                 {t.direction === "credit" ? "+" : "−"}{fmtNaira(t.amount)}
                               </span>
                             </div>
@@ -157,7 +135,7 @@ export default function Portal() {
                   );
                 })}
             </div>
-          </div>
+          </Card>
         )}
       </div>
     </div>
