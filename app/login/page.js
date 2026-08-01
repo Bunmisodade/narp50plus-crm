@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
+import { Button, Input } from "../../components/ui";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -29,40 +30,41 @@ export default function Login() {
   }
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center", fontFamily: "system-ui, sans-serif", background: "#EFEBE0" }}>
-      <form onSubmit={sendLink} style={{ background: "#fff", padding: 32, borderRadius: 8, width: 340, border: "1px solid #D9D3C2" }}>
-        <h1 style={{ fontSize: 20, marginTop: 0 }}>Cooperative CRM</h1>
+    <div className="flex min-h-screen items-center justify-center bg-paper px-4">
+      <form onSubmit={sendLink} className="bg-white p-6 sm:p-8 rounded-md w-full max-w-sm border border-line-strong">
+        <h1 className="text-xl mb-1">Cooperative CRM</h1>
         {sent ? (
-          <p>Check your email for a sign-in link.</p>
+          <p className="text-sm text-ink-soft mt-3">Check your email for a sign-in link.</p>
         ) : (
           <>
-            <p style={{ fontSize: 13, color: "#666" }}>Sign in with your work email — we'll send a magic link.</p>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@cooperative.org"
-              style={{ width: "100%", padding: 10, marginBottom: 12, border: "1px solid #D9D3C2", borderRadius: 4 }}
-            />
-            <input
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="Full name (new members only)"
-              style={{ width: "100%", padding: 10, marginBottom: 12, border: "1px solid #D9D3C2", borderRadius: 4 }}
-            />
-            <input
-              type="text"
-              value={inviteCode}
-              onChange={(e) => setInviteCode(e.target.value)}
-              placeholder="Invite code (new cooperatives only)"
-              style={{ width: "100%", padding: 10, marginBottom: 12, border: "1px solid #D9D3C2", borderRadius: 4 }}
-            />
-            <button type="submit" style={{ width: "100%", padding: 10, background: "#2F6F5E", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}>
-              Send sign-in link
-            </button>
-            {error && <p style={{ color: "#A13D2C", fontSize: 12 }}>{error}</p>}
+            <p className="text-sm text-ink-soft mt-2 mb-4">Sign in with your work email — we&rsquo;ll send a magic link.</p>
+            <div className="mb-3">
+              <Input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@cooperative.org"
+              />
+            </div>
+            <div className="mb-3">
+              <Input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Full name (new members only)"
+              />
+            </div>
+            <div className="mb-4">
+              <Input
+                type="text"
+                value={inviteCode}
+                onChange={(e) => setInviteCode(e.target.value)}
+                placeholder="Invite code (new cooperatives only)"
+              />
+            </div>
+            <Button type="submit" className="w-full">Send sign-in link</Button>
+            {error && <p className="text-rust text-xs mt-2">{error}</p>}
           </>
         )}
       </form>
