@@ -2,7 +2,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import {
-  listMembers, addMember, addNote, addMemberProduct, addProductTransaction, getMyCooperativeId,
+  listMembers, addMember, addNote, addMemberProduct, addProductTransaction, getMyCooperativeId, getMyProfile,
+  inviteMemberToPortal,
 } from "../../lib/members";
 import { sendMemberEmails } from "../../lib/email";
 
@@ -87,11 +88,29 @@ export default function Dashboard() {
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [txTarget, setTxTarget] = useState(null);
   const [expandedProductId, setExpandedProductId] = useState(null);
+  const [invitingId, setInvitingId] = useState(null);
+  const [inviteResult, setInviteResult] = useState(null);
+
+  async function handleInviteToPortal(memberId) {
+    setInvitingId(memberId);
+    setInviteResult(null);
+    try {
+      const result = await inviteMemberToPortal(memberId);
+      setInviteResult({ memberId, ...result });
+    } catch (e) {
+      console.error("Failed to create portal invite:", e);
+      alert("Could not generate a portal invite code. Check the browser console for details.");
+    } finally {
+      setInvitingId(null);
+    }
+  }
 
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { window.location.href = "/login"; return; }
+      const profile = await getMyProfile();
+      if (profile?.role === "member") { window.location.href = "/portal"; return; }
       const coopId = await getMyCooperativeId();
       setCooperativeId(coopId);
       const data = await listMembers();
@@ -257,9 +276,22 @@ export default function Dashboard() {
                   <div>Renewal due<br /><strong>{fmtDate(selected.renewal_date)}</strong></div>
                   <div>Dues<br /><strong>{fmtNaira(selected.dues)}</strong></div>
                 </div>
-                <div style={{ fontFamily: "system-ui", fontSize: 12, color: "#8A8372", marginTop: 16, borderTop: "1px dashed #D9D3C2", paddingTop: 12 }}>
-                  {selected.qbo_linked ? `Linked to QuickBooks: ${selected.qbo_account_ref}` : "Not yet linked to QuickBooks."}
+                <div style={{ fontFamily: "system-ui", fontSize: 12, color: "#8A8372", marginTop: 16, borderTop: "1px dashed #D9D3C2", paddingTop: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span>{selected.qbo_linked ? `Linked to QuickBooks: ${selected.qbo_account_ref}` : "Not yet linked to QuickBooks."}</span>
+                  <button
+                    onClick={() => handleInviteToPortal(selected.id)}
+                    disabled={invitingId === selected.id}
+                    style={{ fontSize: 12, background: "none", border: "1px solid #D9D3C2", borderRadius: 4, padding: "4px 10px", cursor: "pointer", color: INK }}
+                  >
+                    {invitingId === selected.id ? "Generating…" : "Invite to portal"}
+                  </button>
                 </div>
+                {inviteResult && inviteResult.memberId === selected.id && (
+                  <div style={{ fontSize: 12, background: "#F3ECD9", border: "1px solid #E3D9B8", borderRadius: 4, padding: "8px 10px", marginTop: 8 }}>
+                    Portal code: <strong style={{ letterSpacing: 1 }}>{inviteResult.code}</strong>
+                    {inviteResult.emailSent ? " — emailed to the member." : " — no email on file, share this code directly."}
+                  </div>
+                )}
 
                 <div style={{ marginTop: 20, fontFamily: "system-ui" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
