@@ -59,7 +59,7 @@ export default function Home() {
                 <text x="50" y="46" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="10.5" fill="#A13D2C" opacity="0.9" fontWeight="600">VERIFIED</text>
                 <text x="50" y="60" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="8" fill="#A13D2C" opacity="0.75">MEMBER LEDGER</text>
               </svg>
-              <div className="hidden md:flex flex-col gap-2.5 absolute -right-3.5 top-12">
+              <div className="hidden md:flex flex-col gap-2.5 absolute -right-10 top-20">
                 <div className="tab-chip">Starter</div>
                 <div className="tab-chip">Growth</div>
                 <div className="tab-chip">Enterprise</div>
