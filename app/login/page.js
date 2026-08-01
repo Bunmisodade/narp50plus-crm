@@ -29,8 +29,8 @@ export default function Login() {
     else setSent(true);
   }
 
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-paper px-4">
+return (
+    <div className="flex min-h-screen flex-col items-center justify-center bg-paper px-4">
       <form onSubmit={sendLink} className="bg-white p-6 sm:p-8 rounded-md w-full max-w-sm border border-line-strong">
         <h1 className="text-xl mb-1">Cooperative CRM</h1>
         {sent ? (
