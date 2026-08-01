@@ -67,7 +67,8 @@ return (
             {error && <p className="text-rust text-xs mt-2">{error}</p>}
           </>
         )}
-      </form>
+     </form>
+      <SiteFooter />
     </div>
   );
 }
