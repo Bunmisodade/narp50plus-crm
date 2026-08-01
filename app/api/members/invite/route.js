@@ -28,9 +28,9 @@ export async function POST(req) {
   const { memberId } = await req.json();
   if (!memberId) return NextResponse.json({ error: "Missing memberId." }, { status: 400 });
 
-  const { data: member, error: memberError } = await supabaseAdmin
+ const { data: member, error: memberError } = await supabaseAdmin
     .from("members")
-    .select("id, name, email, cooperative_id")
+    .select("id, name, email, cooperative_id, cooperatives(name)")
     .eq("id", memberId)
     .single();
 
@@ -38,6 +38,8 @@ export async function POST(req) {
   if (member.cooperative_id !== profile.cooperative_id) {
     return NextResponse.json({ error: "Not authorized." }, { status: 403 });
   }
+
+  const cooperativeName = (member.cooperatives?.name || "Cooperative CRM").replace(/[<>"]/g, "").trim();
 
   const code = generateInviteCode();
   const { error: inviteError } = await supabaseAdmin.from("invite_codes").insert({
@@ -63,11 +65,11 @@ export async function POST(req) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: "Cooperative CRM <onboarding@mail.corporatebundles.com>",
+          from: `${cooperativeName} <onboarding@mail.corporatebundles.com>`,
           to: member.email,
-          subject: "Your member portal access",
+          subject: `Your ${cooperativeName} member portal access`,
           html: `<p>Hi ${member.name},</p>
-<p>You can now view your savings, loans, and transaction history online.</p>
+<p>You can now view your savings, loans, and transaction history with ${cooperativeName} online.</p>
 <p>Go to <a href="${process.env.NEXT_PUBLIC_APP_URL}/login">${process.env.NEXT_PUBLIC_APP_URL}/login</a>,
 enter this email address, and use the code below (it's single-use):</p>
 <p style="font-size:22px;font-weight:bold;letter-spacing:2px;">${code}</p>
