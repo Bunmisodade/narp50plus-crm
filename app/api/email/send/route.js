@@ -24,6 +24,13 @@ export async function POST(req) {
     return NextResponse.json({ error: "Could not log this campaign." }, { status: 500 });
   }
 
+const { data: cooperative } = await supabaseAdmin
+    .from("cooperatives")
+    .select("name")
+    .eq("id", cooperativeId)
+    .single();
+  const senderName = (cooperative?.name || "Cooperative CRM").replace(/[<>"]/g, "").trim();
+
   const results = await Promise.all(
     recipients.map(async (r) => {
       if (!r.email) return { member_id: r.id || null, email: r.email || "", status: "failed" };
@@ -35,7 +42,7 @@ export async function POST(req) {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            from: "Cooperative CRM <onboarding@mail.corporatebundles.com>",
+            from: `${senderName} <onboarding@mail.corporatebundles.com>`,
             to: r.email,
             subject,
             html: body,
