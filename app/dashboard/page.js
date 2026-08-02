@@ -1,9 +1,10 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import Papa from "papaparse";
 import { supabase } from "../../lib/supabaseClient";
 import {
   listMembers, addMember, addNote, addMemberProduct, addProductTransaction, getMyCooperativeId, getMyProfile,
-  inviteMemberToPortal, closeMemberProduct,
+  inviteMemberToPortal, closeMemberProduct, bulkImportMembers,
 } from "../../lib/members";
 import { sendMemberEmails } from "../../lib/email";
 import { Button, Input, Select, TextArea, Label, Card, Badge, Modal } from "../../components/ui";
@@ -48,6 +49,7 @@ export default function Dashboard() {
   const [noteDraft, setNoteDraft] = useState("");
   const [showProductForm, setShowProductForm] = useState(false);
   const [showEmailForm, setShowEmailForm] = useState(false);
+  const [showImportForm, setShowImportForm] = useState(false);
   const [txTarget, setTxTarget] = useState(null);
   const [expandedProductId, setExpandedProductId] = useState(null);
   const [invitingId, setInvitingId] = useState(null);
@@ -179,6 +181,18 @@ export default function Dashboard() {
     }
   }
 
+  async function handleBulkImport(rows) {
+    try {
+      const count = await bulkImportMembers(cooperativeId, rows);
+      setShowImportForm(false);
+      await refresh();
+      alert(`Imported ${count} member(s).`);
+    } catch (e) {
+      console.error("Failed to import members:", e);
+      alert("Could not import these members. Check the browser console for details.");
+    }
+  }
+
   if (loading) return <div className="p-10 font-sans text-ink-soft">Loading…</div>;
 
   return (
@@ -195,10 +209,16 @@ export default function Dashboard() {
 
       <div className="flex flex-col md:flex-row">
         <aside className="w-full md:w-80 md:border-r border-line-strong p-4 md:p-5">
-          <div className="flex gap-2 mb-3 font-sans">
+          <div className="flex gap-2 mb-2 font-sans">
             <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search…" />
             <Button onClick={() => setShowForm(true)} className="px-4">+</Button>
           </div>
+          <button
+            onClick={() => setShowImportForm(true)}
+            className="text-xs text-ink-soft underline hover:text-forest-dark font-sans mb-3"
+          >
+            Import members from CSV
+          </button>
           <div className="flex gap-1.5 mb-3 font-sans flex-wrap">
             {["All", "Active", "Overdue", "Lapsed"].map((f) => (
               <button
@@ -360,6 +380,7 @@ export default function Dashboard() {
       </div>
 
       {showForm && <MemberForm onCancel={() => setShowForm(false)} onSave={handleAddMember} />}
+      {showImportForm && <ImportForm onCancel={() => setShowImportForm(false)} onImport={handleBulkImport} />}
       {showProductForm && <ProductForm onCancel={() => setShowProductForm(false)} onSave={handleAddProduct} />}
       {txTarget && (
         <TransactionForm
@@ -407,6 +428,162 @@ function MemberForm({ onCancel, onSave }) {
       <div className="flex gap-2 justify-end mt-4">
         <Button variant="ghost" onClick={onCancel}>Cancel</Button>
         <Button onClick={handleSave}>Save</Button>
+      </div>
+    </Modal>
+  );
+}
+
+const TARGET_FIELDS = [
+  { key: "name", label: "Name", required: true },
+  { key: "phone", label: "Phone" },
+  { key: "email", label: "Email" },
+  { key: "join_date", label: "Join date" },
+  { key: "dues", label: "Dues (₦)" },
+  { key: "last_payment", label: "Last payment date" },
+  { key: "renewal_date", label: "Renewal due date" },
+];
+
+const FIELD_ALIASES = {
+  name: ["name", "fullname", "membername", "member"],
+  phone: ["phone", "phonenumber", "mobile", "mobilenumber", "tel", "telephone"],
+  email: ["email", "emailaddress"],
+  join_date: ["joindate", "datejoined", "joined"],
+  dues: ["dues", "amountdue", "duesamount"],
+  last_payment: ["lastpayment", "lastpaymentdate"],
+  renewal_date: ["renewaldate", "renewaldue", "duedate"],
+};
+
+function normalizeHeader(h) {
+  return String(h || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function guessMapping(headers) {
+  const mapping = {};
+  for (const field of TARGET_FIELDS) {
+    const aliases = FIELD_ALIASES[field.key] || [field.key];
+    const match = headers.find((h) => aliases.includes(normalizeHeader(h)));
+    mapping[field.key] = match || "";
+  }
+  return mapping;
+}
+
+function ImportForm({ onCancel, onImport }) {
+  const [fileName, setFileName] = useState("");
+  const [headers, setHeaders] = useState([]);
+  const [rawRows, setRawRows] = useState([]);
+  const [mapping, setMapping] = useState({});
+  const [error, setError] = useState("");
+  const [importing, setImporting] = useState(false);
+
+  function handleFile(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setError("");
+    setFileName(file.name);
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        const detectedHeaders = results.meta.fields || [];
+        setHeaders(detectedHeaders);
+        setRawRows(results.data);
+        setMapping(guessMapping(detectedHeaders));
+      },
+      error: (err) => setError(`Could not read this file: ${err.message}`),
+    });
+  }
+
+  const mappedRows = useMemo(() => {
+    return rawRows.map((row) => {
+      const out = {};
+      for (const field of TARGET_FIELDS) {
+        const col = mapping[field.key];
+        out[field.key] = col ? row[col] : "";
+      }
+      return out;
+    });
+  }, [rawRows, mapping]);
+
+  const validRows = mappedRows.filter((r) => r.name && r.name.trim());
+  const skippedCount = mappedRows.length - validRows.length;
+
+  function handleImportClick() {
+    if (validRows.length === 0) {
+      setError("No rows with a name were found — check your column mapping.");
+      return;
+    }
+    setImporting(true);
+    onImport(validRows);
+  }
+
+  return (
+    <Modal onClose={onCancel} widthClass="max-w-lg">
+      <h3 className="mt-0 pr-6">Import members from CSV</h3>
+
+      {headers.length === 0 && (
+        <>
+          <p className="text-sm text-ink-soft mb-3">
+            Upload a CSV export of your existing member list. You&rsquo;ll be able to match its columns to the
+            right fields before anything is imported.
+          </p>
+          <input type="file" accept=".csv" onChange={handleFile} className="text-sm" />
+        </>
+      )}
+
+      {headers.length > 0 && (
+        <>
+          <p className="text-xs text-ink-soft mb-3">
+            {fileName} — {rawRows.length} row{rawRows.length === 1 ? "" : "s"} detected
+          </p>
+          <div className="space-y-2 mb-3">
+            {TARGET_FIELDS.map((field) => (
+              <div key={field.key} className="flex items-center gap-2">
+                <label className="text-xs text-ink-soft w-36 shrink-0">
+                  {field.label}{field.required ? " *" : ""}
+                </label>
+                <Select
+                  value={mapping[field.key] || ""}
+                  onChange={(e) => setMapping({ ...mapping, [field.key]: e.target.value })}
+                >
+                  <option value="">— Don&rsquo;t import —</option>
+                  {headers.map((h) => <option key={h} value={h}>{h}</option>)}
+                </Select>
+              </div>
+            ))}
+          </div>
+
+          <div className="border border-line-strong rounded-card max-h-40 overflow-y-auto mb-2 text-xs">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-line-strong text-left">
+                  {TARGET_FIELDS.map((f) => <th key={f.key} className="px-2 py-1 font-semibold">{f.label}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {mappedRows.slice(0, 5).map((r, i) => (
+                  <tr key={i} className="border-b border-paper last:border-b-0">
+                    {TARGET_FIELDS.map((f) => <td key={f.key} className="px-2 py-1 text-ink-soft">{r[f.key] || "–"}</td>)}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <p className="text-xs text-ink-soft mb-3">
+            {validRows.length} member{validRows.length === 1 ? "" : "s"} ready to import
+            {skippedCount > 0 && `, ${skippedCount} row${skippedCount === 1 ? "" : "s"} skipped (no name)`}.
+          </p>
+        </>
+      )}
+
+      {error && <div className="text-rust text-xs mt-2">{error}</div>}
+      <div className="flex gap-2 justify-end mt-4">
+        <Button variant="ghost" onClick={onCancel}>Cancel</Button>
+        {headers.length > 0 && (
+          <Button onClick={handleImportClick} disabled={importing}>
+            {importing ? "Importing…" : `Import ${validRows.length} member${validRows.length === 1 ? "" : "s"}`}
+          </Button>
+        )}
       </div>
     </Modal>
   );
