@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { supabaseAdmin } from "../../../../lib/supabaseAdmin";
+import { sendSms } from "../../../../lib/termii";
 
 export const runtime = "nodejs";
 
@@ -30,7 +31,7 @@ export async function POST(req) {
 
  const { data: member, error: memberError } = await supabaseAdmin
     .from("members")
-    .select("id, name, email, cooperative_id, cooperatives(name)")
+    .select("id, name, email, phone, cooperative_id, cooperatives(name)")
     .eq("id", memberId)
     .single();
 
@@ -83,5 +84,14 @@ enter this email address, and use the code below (it's single-use):</p>
     }
   }
 
-  return NextResponse.json({ code, emailSent });
+  let smsSent = false;
+  if (member.phone) {
+    const outcome = await sendSms(
+      member.phone,
+      `${cooperativeName}: You now have member portal access. Go to ${process.env.NEXT_PUBLIC_APP_URL}/login, enter your email, and use this one-time code: ${code}`
+    );
+    smsSent = outcome.ok;
+  }
+
+  return NextResponse.json({ code, emailSent, smsSent });
 }
