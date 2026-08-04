@@ -170,14 +170,18 @@ export default function Dashboard() {
     }
   }
 
-  async function handleSendEmail({ subject, body, recipients }) {
+  async function handleSendEmail({ subject, body, recipients, channels }) {
     try {
-      const result = await sendMemberEmails({ cooperativeId, subject, body, recipients });
+      const result = await sendMemberEmails({ cooperativeId, subject, body, recipients, channels });
       setShowEmailForm(false);
-      alert(`Email sent to ${result.sent} member(s)${result.failed ? `, ${result.failed} failed` : ""}.`);
+      const summary = Object.entries(result.results || {})
+        .filter(([, r]) => r.sent > 0 || r.failed > 0)
+        .map(([ch, r]) => `${ch}: ${r.sent} sent${r.failed ? `, ${r.failed} failed` : ""}`)
+        .join(" · ");
+      alert(summary || "Message sent.");
     } catch (e) {
-      console.error("Failed to send email:", e);
-      alert("Could not send this email. Check the browser console for details.");
+      console.error("Failed to send message:", e);
+      alert("Could not send this message. Check the browser console for details.");
     }
   }
 
@@ -203,7 +207,7 @@ export default function Dashboard() {
           <span className="text-ink-soft hidden sm:inline">
             {enriched.length} members · {enriched.filter((m) => m.status === "Overdue").length} overdue
           </span>
-          <Button onClick={() => setShowEmailForm(true)}>Send Email</Button>
+          <Button onClick={() => setShowEmailForm(true)}>Send Message</Button>
         </div>
       </header>
 
@@ -287,7 +291,8 @@ export default function Dashboard() {
                 {inviteResult && inviteResult.memberId === selected.id && (
                   <div className="text-xs bg-brass-tint border border-brass/30 rounded-card px-2.5 py-2 mt-2">
                     Portal code: <strong className="tracking-wide">{inviteResult.code}</strong>
-                    {inviteResult.emailSent ? " — emailed to the member." : " — no email on file, share this code directly."}
+                    {" — "}
+                    {[inviteResult.emailSent && "emailed", inviteResult.smsSent && "texted"].filter(Boolean).join(" and ") || "no email or phone on file, share this code directly"}.
                   </div>
                 )}
 
@@ -391,7 +396,7 @@ export default function Dashboard() {
       )}
       {showEmailForm && (
         <EmailForm
-          members={filtered.filter((m) => m.email)}
+          members={filtered.filter((m) => m.email || m.phone)}
           onCancel={() => setShowEmailForm(false)}
           onSend={handleSendEmail}
         />
@@ -680,6 +685,7 @@ function TransactionForm({ productType, onCancel, onSave }) {
 
 function EmailForm({ members, onCancel, onSend }) {
   const [selected, setSelected] = useState(() => new Set(members.map((m) => m.id)));
+  const [channels, setChannels] = useState({ email: true, sms: false, whatsapp: false });
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
@@ -692,14 +698,22 @@ function EmailForm({ members, onCancel, onSend }) {
     });
   }
 
+  function toggleChannel(ch) {
+    setChannels((prev) => ({ ...prev, [ch]: !prev[ch] }));
+  }
+
+  const activeChannels = Object.entries(channels).filter(([, on]) => on).map(([ch]) => ch);
+
   async function handleSend() {
-    if (!subject.trim() || !body.trim() || selected.size === 0) return;
+    if (!body.trim() || selected.size === 0 || activeChannels.length === 0) return;
+    if (channels.email && !subject.trim()) return;
     setSending(true);
     try {
       await onSend({
         subject,
         body,
-        recipients: members.filter((m) => selected.has(m.id)).map((m) => ({ id: m.id, email: m.email })),
+        channels: activeChannels,
+        recipients: members.filter((m) => selected.has(m.id)).map((m) => ({ id: m.id, email: m.email, phone: m.phone })),
       });
     } finally {
       setSending(false);
@@ -708,20 +722,40 @@ function EmailForm({ members, onCancel, onSend }) {
 
   return (
     <Modal onClose={onCancel} widthClass="max-w-md">
-      <h3 className="mt-0 pr-6">Send email</h3>
-      <Input placeholder="Subject" value={subject} onChange={(e) => setSubject(e.target.value)} className="mb-2" />
+      <h3 className="mt-0 pr-6">Send message</h3>
+
+      <div className="text-xs font-bold mb-1.5">Send by</div>
+      <div className="flex gap-4 mb-3 text-sm">
+        <label className="flex items-center gap-1.5">
+          <input type="checkbox" checked={channels.email} onChange={() => toggleChannel("email")} /> Email
+        </label>
+        <label className="flex items-center gap-1.5">
+          <input type="checkbox" checked={channels.sms} onChange={() => toggleChannel("sms")} /> SMS
+        </label>
+        <label className="flex items-center gap-1.5">
+          <input type="checkbox" checked={channels.whatsapp} onChange={() => toggleChannel("whatsapp")} /> WhatsApp
+        </label>
+      </div>
+
+      {channels.email && (
+        <Input placeholder="Subject" value={subject} onChange={(e) => setSubject(e.target.value)} className="mb-2" />
+      )}
       <TextArea placeholder="Message" value={body} onChange={(e) => setBody(e.target.value)} rows={6} className="mb-3" />
+      {(channels.sms || channels.whatsapp) && (
+        <p className="text-xs text-ink-soft -mt-2 mb-3">SMS/WhatsApp are sent as plain text — the subject line above isn&rsquo;t included on those channels.</p>
+      )}
+
       <div className="text-xs font-bold mb-1.5">
         Recipients ({selected.size} of {members.length})
       </div>
       <div className="border border-line-strong rounded-card max-h-40 overflow-y-auto mb-3">
         {members.length === 0 && (
-          <div className="p-2.5 text-xs text-ink-soft">No members with an email address match the current filter.</div>
+          <div className="p-2.5 text-xs text-ink-soft">No members with an email address or phone number match the current filter.</div>
         )}
         {members.map((m) => (
           <label key={m.id} className="flex items-center gap-2 px-2 py-1.5 text-sm border-b border-paper last:border-b-0">
             <input type="checkbox" checked={selected.has(m.id)} onChange={() => toggle(m.id)} />
-            {m.name} <span className="text-ink-soft">({m.email})</span>
+            {m.name} <span className="text-ink-soft">({[m.email, m.phone].filter(Boolean).join(" · ") || "no contact info"})</span>
           </label>
         ))}
       </div>
